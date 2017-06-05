@@ -4,3 +4,4 @@ export default (text = 'Hello world11') => {
     element.innerHTML = text;
     return element;
 };
+

@@ -1,62 +1,51 @@
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const merge = require('webpack-merge');
+
+const parts = require('./webpack.parts');
 
 const PATHS = {
-    app: path.join(__dirname, 'app'),
-    build: path.join(__dirname, 'build'),
+  app: path.join(__dirname, 'app'),
+  build: path.join(__dirname, 'build'),
 };
 
-const commonConfig = {
+const commonConfig = merge([
+  {
     entry: {
-        app: PATHS.app,
+      app: PATHS.app,
     },
     output: {
-        path: PATHS.build,
-        filename: '[name].js',
+      path: PATHS.build,
+      filename: '[name].js',
     },
     plugins: [
-        new HtmlWebpackPlugin({
-            title: 'Hello',
-        }),
+      new HtmlWebpackPlugin({
+        title: 'Webpack demo',
+      }),
     ],
-};
+  },
+  parts.lintJavaScript({ include: PATHS.app }),
+]);
 
-const productionConfig = () => commonConfig;
+const productionConfig = merge([
+  // extract css to a file   
+  parts.extractCSS({ use: 'css-loader' }),
 
-const developmentConfig = () => {
-    const config = {
-        devServer: {
-            historyApiFallback: true,
-            stats: 'errors-only',
-            host: process.env.HOST,
-            port: 2500,
-            overlay: {
-                errors: true,
-                warnings: true,
-            },
-        },
-        module: {
-            rules: [{
-                test: /\.js$/,
-                enforce: 'pre',
-                loader: 'eslint-loader',
-                options: {
-                    emitWarning: true,
-                },
-            }],
-        },
-    };
+]);
 
-    return Object.assign({},
-        commonConfig,
-        config
-    );
-};
+const developmentConfig = merge([
+  parts.devServer({
+    // Customize host/port here if needed
+    host: process.env.HOST,
+    port:2500,
+  }),
+  parts.loadCSS(),
+]);
 
 module.exports = (env) => {
-    console.log(env);
-    if (env === 'production') {
-        return productionConfig();
-    }
-    return developmentConfig();
+  if (env === 'production') {
+    return merge(commonConfig, productionConfig);
+  }
+
+  return merge(commonConfig, developmentConfig);
 };
